@@ -5,19 +5,22 @@ window.addEventListener("storage", ({ key, newValue, oldValue }) => {
     if (key === "domainList") {
         // 比较变化的数据，判断是增添或者删除
         // chrome.cookies.remove(object details)
-        const newValue = JSON.parse(newValue);
-        const oldValue = JSON.parse(oldValue);
+        newValue = JSON.parse(newValue) || [];
+        oldValue = JSON.parse(oldValue) || [];
         if (newValue.length > oldValue.length) {
-            // 新增
+            // 新增，最后一条为新增，仅取最后一条
             init(newValue.slice(-1));
         } else {
+            // 移除cookie
             const deleteValue = oldValue.find(e => !newValue.some(n => n === e));
-            console.log('deleteValue', deleteValue)
+            console.log("deleteValue", deleteValue);
             chrome.cookies.remove({
-                url: "http://" + deleteValue.to,
+                url: "https://" + deleteValue.to,
                 name: deleteValue.name,
             });
         }
+        // 事件监听
+        addEventListener(newValue);
     }
 });
 function setCookie(cookie, obj) {
@@ -25,7 +28,7 @@ function setCookie(cookie, obj) {
     const res = cookie;
     chrome.cookies.set(
         {
-            url: "http://" + obj.to,
+            url: "https://" + obj.to,
             domain: obj.hostname,
             value: res.value,
             name: res.name,
@@ -39,25 +42,26 @@ const init = domainList => {
     for (const iterator of domainList) {
         chrome.cookies.get(
             {
-                url: "http://" + iterator.from,
+                url: "https://" + iterator.from,
                 name: iterator.name,
             },
             cookie => {
                 setCookie(cookie, iterator);
-                addEventListener(iterator);
             }
         );
     }
 };
-const addEventListener = obj => {
+const addEventListener = newValue => {
     chrome.cookies.onChanged.addListener(function (changeInfo) {
-        if (changeInfo.cookie.domain === obj.from) {
+        console.log("changeinfo", changeInfo, newValue);
+        const fromList = newValue.map(e => e.from);
+        if (fromList.includes(changeInfo.cookie.domain)) {
             // console.log("changeInfo.removed", changeInfo.removed);
             // 移除
             if (changeInfo.removed) {
                 chrome.cookies.remove(
                     {
-                        url: "http://" + obj.to,
+                        url: "https://" + obj.to,
                         name: changeInfo.cookie["name"],
                     },
                     function (cookie) {
@@ -69,7 +73,7 @@ const addEventListener = obj => {
             else {
                 chrome.cookies.set(
                     {
-                        url: "http://" + obj.to,
+                        url: "https://" + obj.to,
                         name: changeInfo.cookie["name"],
                         path: "/",
                         value: changeInfo.cookie["value"],

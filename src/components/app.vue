@@ -38,9 +38,9 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 const formRef = ref(null);
 const structure = reactive({
-  from: "gdios.dev.ge.cn",
-  name: "WEBID",
-  to: "localhost",
+    from: "gdios.dev.ge.cn",
+    name: "WEBID",
+    to: "localhost",
 });
 let domainList = reactive([]);
 const moreList = computed(() => domainList.length > 1);
@@ -60,7 +60,7 @@ function onSubmit() {
     ...structure,
     id: str,
   });
-  formRef.value.resetFields();
+  // formRef.value.resetFields();
   localStorage.setItem("domainList", JSON.stringify(domainList));
 }
 function deleteList(i) {
