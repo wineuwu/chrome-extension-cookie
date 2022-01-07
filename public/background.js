@@ -1,4 +1,5 @@
 "use strict";
+let storageList = [];
 
 window.addEventListener("storage", ({ key, newValue, oldValue }) => {
     console.log("key", key);
@@ -7,6 +8,7 @@ window.addEventListener("storage", ({ key, newValue, oldValue }) => {
         // chrome.cookies.remove(object details)
         newValue = JSON.parse(newValue) || [];
         oldValue = JSON.parse(oldValue) || [];
+        storageList = newValue;
         if (newValue.length > oldValue.length) {
             // 新增，最后一条为新增，仅取最后一条
             init(newValue.slice(-1));
@@ -20,7 +22,7 @@ window.addEventListener("storage", ({ key, newValue, oldValue }) => {
             });
         }
         // 事件监听
-        addEventListener(newValue);
+        // addEventListener(newValue);
     }
 });
 function setCookie(cookie, obj) {
@@ -51,41 +53,41 @@ const init = domainList => {
         );
     }
 };
-const addEventListener = newValue => {
-    chrome.cookies.onChanged.addListener(function (changeInfo) {
-        console.log("changeinfo", changeInfo, newValue);
-        const fromList = newValue.map(e => e.from);
-        if (fromList.includes(changeInfo.cookie.domain)) {
-            // console.log("changeInfo.removed", changeInfo.removed);
-            // 移除
-            if (changeInfo.removed) {
-                chrome.cookies.remove(
-                    {
-                        url: "https://" + obj.to,
-                        name: changeInfo.cookie["name"],
-                    },
-                    function (cookie) {
-                        // console.log('移除,重新获取cookie');
-                    }
-                );
-            }
-            // 设置、更新
-            else {
-                chrome.cookies.set(
-                    {
-                        url: "https://" + obj.to,
-                        name: changeInfo.cookie["name"],
-                        path: "/",
-                        value: changeInfo.cookie["value"],
-                        expirationDate: changeInfo.cookie["expirationDate"],
-                        secure: true,
-                        sameSite: "no_restriction", // 不阻止跨域cookie
-                    },
-                    function (cookie) {
-                        // console.log('设置,重新获取cookie');
-                    }
-                );
-            }
+// const addEventListener = newValue => {};
+
+chrome.cookies.onChanged.addListener(function (changeInfo) {
+    const fromList = storageList.map(e => e.from);
+    // console.log("changeinfo", changeInfo, storageList);
+    if (fromList.includes(changeInfo.cookie.domain)) {
+        const target = storageList.find(e => e.from === changeInfo.cookie.domain);
+        // 移除
+        if (changeInfo.removed) {
+            chrome.cookies.remove(
+                {
+                    url: "https://" + target.to,
+                    name: changeInfo.cookie["name"],
+                },
+                function (cookie) {
+                    // console.log('移除,重新获取cookie');
+                }
+            );
         }
-    });
-};
+        // 设置、更新
+        else {
+            chrome.cookies.set(
+                {
+                    url: "https://" + target.to,
+                    name: changeInfo.cookie["name"],
+                    path: "/",
+                    value: changeInfo.cookie["value"],
+                    expirationDate: changeInfo.cookie["expirationDate"],
+                    secure: true,
+                    sameSite: "no_restriction", // 不阻止跨域cookie
+                },
+                function (cookie) {
+                    // console.log('设置,重新获取cookie');
+                }
+            );
+        }
+    }
+});
