@@ -5,9 +5,14 @@
       <li v-for="(item, index) in domainList" :key="item.id">
         <span>
           从
-          <a :href="item.from">{{ item.from }}</a>
+          <a
+            href="javascript:void(0)"
+            target="_blank"
+            @click="jumpTo(item.from)"
+            >{{ item.from }}</a
+          >
           站点获取cookie:
-          <i>{{ item.name }}</i> 放到当前站点；
+          <i>{{ item.name }}</i> 放到站点 {{ item.to }} ；
         </span>
         <el-icon color="#409EFC" class="no-inherit" @click="deleteList(index)">
           <delete />
@@ -38,9 +43,9 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 const formRef = ref(null);
 const structure = reactive({
-    from: "gdios.dev.ge.cn",
-    name: "WEBID",
-    to: "localhost",
+  from: "gdios.dev.ge.cn",
+  name: "WEBID",
+  to: "localhost",
 });
 let domainList = reactive([]);
 const moreList = computed(() => domainList.length > 1);
@@ -66,6 +71,9 @@ function onSubmit() {
 function deleteList(i) {
   domainList.splice(i, 1);
   localStorage.setItem("domainList", JSON.stringify(domainList));
+}
+function jumpTo(url) {
+  window.open('http://'+url);
 }
 </script>
 
