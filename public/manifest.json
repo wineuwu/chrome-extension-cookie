@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "cookie工具",
     "version": "0.0.1",
-    "description": "便捷复制粘贴项目的cookie,方便开发",
+    "description": "方便在开发下迁移cookie,突破cookie的跨域限制",
     "icons": {
         "16": "sources/icon16.png",
         "48": "sources/icon48.png",
@@ -11,7 +11,7 @@
 
     "browser_action": {
         "default_icon": "sources/icon128.png",
-        "default_title": "解决Chrome浏览器Cookie携带问题",
+        "default_title": "解决Chrome浏览器Cookie跨域携带问题",
         "default_popup": "index.html"
     },
     "content_scripts": [],
@@ -19,7 +19,7 @@
         "scripts": ["background.js"],
         "persistent": true
     },
-    "permissions": ["storage", "webRequest", "webRequestBlocking", "*://*/", "cookies"],
+    "permissions": ["storage",  "*://*/", "cookies"],
     "web_accessible_resources": [],
     "homepage_url": "https://github.com/aMiing",
     "chrome_url_overrides": {}

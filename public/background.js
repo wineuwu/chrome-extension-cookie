@@ -26,7 +26,7 @@ window.addEventListener("storage", ({ key, newValue, oldValue }) => {
     }
 });
 function setCookie(cookie, obj) {
-    console.log("setCookie cookie", cookie);
+    // 向target添加cookie
     const res = cookie;
     chrome.cookies.set(
         {
@@ -42,6 +42,7 @@ function setCookie(cookie, obj) {
 const init = domainList => {
     // 遍历domainList,添加规则
     for (const iterator of domainList) {
+        // 从source源获取cookie
         chrome.cookies.get(
             {
                 url: "https://" + iterator.from,
