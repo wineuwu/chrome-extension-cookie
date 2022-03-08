@@ -1,94 +1,59 @@
 "use strict";
 let storageList = [];
 
-window.addEventListener("storage", ({ key, newValue, oldValue }) => {
-    console.log("key", key);
-    if (key === "domainList") {
-        // 比较变化的数据，判断是增添或者删除
-        // chrome.cookies.remove(object details)
-        newValue = JSON.parse(newValue) || [];
-        oldValue = JSON.parse(oldValue) || [];
-        storageList = newValue;
-        if (newValue.length > oldValue.length) {
-            // 新增，最后一条为新增，仅取最后一条
-            init(newValue.slice(-1));
-        } else {
-            // 移除cookie
-            const deleteValue = oldValue.find(e => !newValue.some(n => n === e));
-            console.log("deleteValue", deleteValue);
-            chrome.cookies.remove({
-                url: "https://" + deleteValue.to,
-                name: deleteValue.name,
-            });
-        }
-        // 事件监听
-        // addEventListener(newValue);
-    }
-});
-function setCookie(cookie, obj) {
-    // 向target添加cookie
-    const res = cookie;
-    chrome.cookies.set(
-        {
-            url: "https://" + obj.to,
-            domain: obj.hostname,
-            value: res.value,
-            name: res.name,
-            httpOnly: res.httpOnly,
-        },
-        function (cookie) {}
-    );
+function updateConfigList(list) {
+    storageList = list;
 }
-const init = domainList => {
-    // 遍历domainList,添加规则
-    for (const iterator of domainList) {
-        // 从source源获取cookie
+
+function changeConfigItem(configItem, type = "add") {
+    // 从source源获取cookie
+    return new Promise(resolve => {
         chrome.cookies.get(
             {
-                url: "https://" + iterator.from,
-                name: iterator.name,
+                url: "https://" + configItem.from,
+                name: configItem.name,
             },
             cookie => {
-                setCookie(cookie, iterator);
+                if (cookie) {
+                    type === "add" ? setCookie(cookie, configItem) : removeCookie(cookie, configItem);
+                } else {
+                    resolve(false);
+                }
+                resolve(true);
             }
         );
-    }
-};
-// const addEventListener = newValue => {};
+    })
+}
 
-chrome.cookies.onChanged.addListener(function (changeInfo) {
-    const fromList = storageList.map(e => e.from);
-    // console.log("changeinfo", changeInfo, storageList);
-    if (fromList.includes(changeInfo.cookie.domain)) {
-        const target = storageList.find(e => e.from === changeInfo.cookie.domain);
+chrome.cookies.onChanged.addListener(function ({ cookie, removed }) {
+    const target = storageList.find(e => e.from === cookie.domain);
+    if (target) {
+        console.log("cookie---", cookie);
+        console.log("storageList: target", target);
         // 移除
-        if (changeInfo.removed) {
-            chrome.cookies.remove(
-                {
-                    url: "https://" + target.to,
-                    name: changeInfo.cookie["name"],
-                },
-                function (cookie) {
-                    // console.log('移除,重新获取cookie');
-                }
-            );
-        }
+        if (removed) removeCookie(cookie, target);
         // 设置、更新
-        else {
-            chrome.cookies.set(
-                {
-                    url: "https://" + target.to,
-                    name: changeInfo.cookie["name"],
-                    path: "/",
-                    value: changeInfo.cookie["value"],
-                    expirationDate: changeInfo.cookie["expirationDate"],
-                    secure: true,
-                    sameSite: "no_restriction", // 不阻止跨域cookie
-                },
-                function (cookie) {
-                    // console.log('设置,重新获取cookie');
-                }
-            );
-        }
+        else setCookie(cookie, target);
     }
 });
+
+const setCookie = (cookie, config) => {
+    console.log("setCookie----cookie, config", cookie, config);
+    chrome.cookies.set({
+        url: "https://" + config.to,
+        domain: config.to,
+        name: cookie["name"],
+        path: cookie["path"],
+        value: cookie["value"],
+        expirationDate: cookie["expirationDate"],
+        secure: true,
+        sameSite: "no_restriction", // 不阻止跨域cookie
+    });
+};
+
+const removeCookie = (cookie, config) => {
+    chrome.cookies.remove({
+        url: "https://" + config.to,
+        name: cookie["name"],
+    });
+};

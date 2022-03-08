@@ -4,13 +4,13 @@
     "version": "0.0.1",
     "description": "方便在开发下迁移cookie,突破cookie的跨域限制",
     "icons": {
-        "16": "sources/icon16.png",
-        "48": "sources/icon48.png",
-        "128": "sources/icon128.png"
+        "16": "sources/cookie48.png",
+        "48": "sources/cookie48.png",
+        "128": "sources/cookie128.png"
     },
 
     "browser_action": {
-        "default_icon": "sources/icon128.png",
+        "default_icon": "sources/cookie128.png",
         "default_title": "解决Chrome浏览器Cookie跨域携带问题",
         "default_popup": "index.html"
     },
