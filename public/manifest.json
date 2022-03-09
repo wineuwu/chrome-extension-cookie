@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "cookie工具",
     "version": "0.0.1",
-    "description": "方便在开发下迁移cookie,突破cookie的跨域限制",
+    "description": "方便在开发环境下迁移cookie,突破cookie的跨域限制",
     "icons": {
         "16": "sources/cookie48.png",
         "48": "sources/cookie48.png",

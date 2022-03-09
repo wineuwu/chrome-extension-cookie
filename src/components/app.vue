@@ -15,9 +15,9 @@
             </el-table>
             <el-divider></el-divider>
         </div>
-        <el-form ref="formRef" :inline="true" label-suffix=":" :model="structure">
+        <el-form ref="formRef" :inline="true" label-suffix=":" :model="structure" :rules="formRules">
             <el-form-item label="把" prop="from">
-                <el-input v-model="structure.from"></el-input>
+                <el-autocomplete v-model="structure.from" :fetch-suggestions="querySearch" placeholder="输入目标站点" @select="handleSelect(formRef)" />
             </el-form-item>
             <el-form-item label="的cookie" prop="name">
                 <el-input v-model="structure.name"></el-input>
@@ -25,26 +25,32 @@
             <el-form-item label="同步到" prop="to">
                 <el-input v-model="structure.to"></el-input>
             </el-form-item>
-            <el-form-item>
-                <el-button type="primary" @click="onSubmit">添加</el-button>
-            </el-form-item>
         </el-form>
+        <div class="submit-content">
+            <el-button type="primary" @click="onSubmit(formRef)">添加监控</el-button>
+        </div>
         <el-alert v-if="alertText" :title="alertText" type="warning" show-icon :closable="false"> </el-alert>
     </div>
 </template>
 
 <script setup>
-import { Plus, Delete } from "@element-plus/icons-vue";
-import { ref, reactive, computed, onMounted } from "vue";
-// import { ElMessage, ElTable, ElForm, ElDivider } from "element-plus";
+import { Delete } from "@element-plus/icons-vue";
+import { ref, reactive, onMounted } from "vue";
+
 const initItem = {
-    from: "gdios.dev.ge.cn",
+    from: "",
     name: "WEBID",
-    to: "localhost",
+    to: "http://localhost",
 };
-const formRef = ref(null);
+const formRef = ref();
+
+const formRules = reactive({
+    from: [{ required: true, message: "请输入源站点", trigger: "blur" }],
+    to: [{ required: true, message: "请输入目标站点", trigger: "blur" }],
+    name: [{ required: true, message: "请输入cookie名称", trigger: "blur" }],
+});
 // 去最后依次输入数据或者默认数据
-let structure = reactive(initItem);
+const structure = reactive(initItem);
 let domainList = reactive([]);
 let alertText = ref(null);
 onMounted(() => {
@@ -59,27 +65,32 @@ onMounted(() => {
     }
 });
 
-async function onSubmit() {
-    const str = JSON.stringify(structure);
-    alertText.value = null;
-    if (domainList.some(e => e.id === str)) {
-        // ElMessage("数据已存在于列表中");
-        alertText.value = "此配置项已存在于监控列表中，无需重复添加哦";
-        return;
-    }
-    const config = {
-        ...structure,
-        id: str,
-    };
-    const res = await chrome.extension.getBackgroundPage().changeConfigItem(config, "add");
-    // 如果不存在该cookie显示提示信息；存在再执行后续逻辑
-    if (res) {
-        domainList.push(config);
-        localStorage.setItem("domainList", JSON.stringify(domainList));
-        chrome.extension.getBackgroundPage().updateConfigList(domainList);
-    } else {
-        alertText.value = "获取cookie失败,请检查是否存在该cookie";
-    }
+function onSubmit(formEl) {
+    if (!formEl) return;
+    formEl.validate(async valid => {
+        if (valid) {
+            const str = JSON.stringify(structure);
+            alertText.value = null;
+            if (domainList.some(e => e.id === str)) {
+                // ElMessage("数据已存在于列表中");
+                alertText.value = "此配置项已存在于监控列表中，无需重复添加哦";
+                return;
+            }
+            const config = {
+                ...structure,
+                id: str,
+            };
+            const res = await chrome.extension.getBackgroundPage().changeConfigItem(config, "add");
+            // 如果不存在该cookie显示提示信息；存在再执行后续逻辑
+            if (res) {
+                domainList.push(config);
+                localStorage.setItem("domainList", JSON.stringify(domainList));
+                chrome.extension.getBackgroundPage().updateConfigList(domainList);
+            } else {
+                alertText.value = "获取cookie失败,请检查是否存在该cookie";
+            }
+        }
+    });
 }
 function deleteList(row) {
     alertText.value = null;
@@ -90,16 +101,30 @@ function deleteList(row) {
     chrome.extension.getBackgroundPage().updateConfigList(domainList);
     chrome.extension.getBackgroundPage().changeConfigItem(row, "delete");
 }
-function jumpTo(url) {
-    window.open("http://" + url);
+
+const restaurants = reactive([
+    {
+        value: "http://gdios.dev.ge.cn",
+    },
+    {
+        value: "http://192.168.10.24",
+    },
+]);
+
+const querySearch = (queryString, cb) => {
+    const results = queryString ? restaurants.filter(e => e.value === queryString) : restaurants;
+    // call callback function to return suggestions
+    cb(results);
+};
+
+function handleSelect(formEl) {
+    formEl.clearValidate("from");
 }
 </script>
 
 <style lang="less" scoped>
-.list {
-    display: flex;
-}
-.configList {
-    // padding: ;
+.submit-content {
+    text-align: center;
+    padding-bottom: 12px;
 }
 </style>
